@@ -1,86 +1,63 @@
+import fs from 'fs';
+import path from 'path';
 
-import { getDb } from './firebase-admin';
+const DATA_DIR = path.join(process.cwd(), 'src/data');
 
-const COLLECTIONS = {
-  FILMS: 'films',
-  TEAM: 'team',
-  CONFIG: 'config',
-  USERS: 'users',
-  NEWSLETTER: 'newsletter',
-};
-
-// --- Films ---
 export async function getFilms() {
-  const snapshot = await getDb().collection(COLLECTIONS.FILMS).get();
-  return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+  const filePath = path.join(DATA_DIR, 'films.json');
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 export async function saveFilms(films: any[]) {
-  const db = getDb();
-  for (const film of films) {
-    const { id, ...data } = film;
-    if (id) {
-      await db.collection(COLLECTIONS.FILMS).doc(id).set(data, { merge: true });
-    } else {
-      await db.collection(COLLECTIONS.FILMS).add(data);
-    }
-  }
+  const filePath = path.join(DATA_DIR, 'films.json');
+  fs.writeFileSync(filePath, JSON.stringify(films, null, 2), 'utf8');
 }
 
-// --- Team ---
 export async function getTeam() {
-  const snapshot = await getDb().collection(COLLECTIONS.TEAM).get();
-  return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+  const filePath = path.join(DATA_DIR, 'team.json');
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 export async function saveTeam(team: any[]) {
-  const db = getDb();
-  for (const member of team) {
-    const { id, ...data } = member;
-    if (id) {
-      await db.collection(COLLECTIONS.TEAM).doc(id).set(data, { merge: true });
-    } else {
-      await db.collection(COLLECTIONS.TEAM).add(data);
-    }
-  }
+  const filePath = path.join(DATA_DIR, 'team.json');
+  fs.writeFileSync(filePath, JSON.stringify(team, null, 2), 'utf8');
 }
 
-// --- Config ---
 export async function getConfig() {
-  const doc = await getDb().collection(COLLECTIONS.CONFIG).doc('home').get();
-  return doc.exists ? doc.data() : null;
+  const filePath = path.join(DATA_DIR, 'config.json');
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 export async function saveConfig(config: any) {
-  await getDb().collection(COLLECTIONS.CONFIG).doc('home').set(config, { merge: true });
+  const filePath = path.join(DATA_DIR, 'config.json');
+  fs.writeFileSync(filePath, JSON.stringify(config, null, 2), 'utf8');
 }
 
-// --- Users ---
 export async function getUsers() {
-  const snapshot = await getDb().collection(COLLECTIONS.USERS).get();
-  return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+  const filePath = path.join(DATA_DIR, 'users.json');
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 export async function saveUsers(users: any[]) {
-  const db = getDb();
-  for (const user of users) {
-    const { id, ...data } = user;
-    if (id) {
-       await db.collection(COLLECTIONS.USERS).doc(id).set(data, { merge: true });
-    } else {
-       await db.collection(COLLECTIONS.USERS).add(data);
-    }
-  }
+  const filePath = path.join(DATA_DIR, 'users.json');
+  fs.writeFileSync(filePath, JSON.stringify(users, null, 2), 'utf8');
 }
 
-// --- Newsletter ---
 export async function getSubscribers() {
-  const snapshot = await getDb().collection(COLLECTIONS.NEWSLETTER).get();
-  return snapshot.docs.map((doc: any) => doc.id); // Assuming doc ID is the email
+  const filePath = path.join(DATA_DIR, 'newsletter.json');
+  if (!fs.existsSync(filePath)) return [];
+  const subs = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  return subs.map((s: any) => s.email);
 }
 
 export async function addSubscriber(email: string) {
-  await getDb().collection(COLLECTIONS.NEWSLETTER).doc(email).set({ 
-    subscribedAt: new Date().toISOString() 
-  });
+  const filePath = path.join(DATA_DIR, 'newsletter.json');
+  let subs = [];
+  if (fs.existsSync(filePath)) {
+    subs = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  }
+  if (!subs.find((s: any) => s.email === email)) {
+    subs.push({ email, subscribedAt: new Date().toISOString() });
+    fs.writeFileSync(filePath, JSON.stringify(subs, null, 2), 'utf8');
+  }
 }
